@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	address = flag.String("address", "127.0.0.1:50500", "The address to listen on")
+	address = flag.String("address", "127.0.0.1:50505", "The address to listen on")
 )
 
 func main() {

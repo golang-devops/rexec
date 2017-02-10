@@ -75,5 +75,7 @@ func main() {
 	})
 
 	fmt.Println("Listening on " + *address)
-	http.ListenAndServe(*address, nil)
+	if err := http.ListenAndServe(*address, nil); err != nil {
+		log.Fatal(err)
+	}
 }

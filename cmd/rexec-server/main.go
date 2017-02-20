@@ -3,12 +3,12 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 	"net"
 	"net/http"
 	"net/rpc"
 
 	_ "github.com/golang-devops/rexec/comms"
+	"github.com/golang-devops/rexec/logging"
 )
 
 var (
@@ -16,20 +16,22 @@ var (
 )
 
 func main() {
+	logger := logging.Logger()
+
 	flag.Parse()
 	if *address == "" {
-		log.Fatal("address flag is missing")
+		logger.Fatal("address flag is missing")
 	}
 
 	rpc.HandleHTTP()
 
 	listener, err := net.Listen("tcp", *address)
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal(err.Error())
 	}
 
-	log.Println(fmt.Sprintf("Server listening on %s", *address))
+	logger.Info(fmt.Sprintf("Server listening on %s", *address))
 	if err := http.Serve(listener, nil); err != nil {
-		log.Fatal(err)
+		logger.Fatal(err.Error())
 	}
 }

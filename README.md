@@ -4,4 +4,4 @@ Simple remote-execution server+client
 
 ## Quick Start
 
-The root directory (of this repo) is the client and the server is in the subdirectory `rexec-server`.
+Refer to the `cmd/rexec-client` and `cmd/rexec-server` directories for CLI implementations.

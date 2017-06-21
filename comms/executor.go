@@ -8,21 +8,9 @@ import (
 	"github.com/golang-devops/rexec/logging"
 )
 
-type Executor int
-
-type ExecutorExecuteArgs struct {
-	Exe  string
-	Args []string
-}
-
-type ExecutorExecuteReply struct {
-	Out   []byte
-	Error error
-}
-
-type ExecutorStartReply struct {
-	Pid   int
-	Error error
+//Executor is the RPC server/executor
+type Executor struct {
+	sessions *executorSessions
 }
 
 func (e *Executor) Execute(executeArgs *ExecutorExecuteArgs, reply *ExecutorExecuteReply) error {
@@ -50,17 +38,55 @@ func (e *Executor) Start(executeArgs *ExecutorExecuteArgs, reply *ExecutorStartR
 		logger.Info(fmt.Sprintf("Start (pid = %s). %q", pidStr, append([]string{executeArgs.Exe}, executeArgs.Args...)))
 	}()
 
+	session := e.sessions.NewSession()
+	reply.SessionID = session.id
+	logger = logger.WithField("session-id", session.id)
+	logger.Debug(fmt.Sprintf("Created session %s, currently %d sessions running", session.id, e.sessions.SessionCount()))
+
 	cmd := exec.Command(executeArgs.Exe, executeArgs.Args...)
-	reply.Error = cmd.Start()
-	if reply.Error != nil {
-		return reply.Error
+	session.SetCommand(cmd)
+
+	if err := session.StartCommand(logger); err != nil {
+		logger.WithError(err).Error("Error starting command")
+		reply.Error = err
+		return err
 	}
+
 	reply.Pid = cmd.Process.Pid
 	pidStr = fmt.Sprintf("%d", reply.Pid)
 
 	return nil
 }
 
+func (e *Executor) GetFeedback(args *GetFeedbackArgs, reply *GetFeedbackReply) error {
+	logger := logging.Logger()
+
+	session, err := e.sessions.GetSession(args.SessionID)
+	if err != nil {
+		logger.WithError(err).Error("Error getting session")
+		reply.Error = err
+		return err
+	}
+
+	offsetLines := args.OffsetLines
+	lines, err := session.ReadNextLines(offsetLines)
+	if err != nil {
+		if !IsEOFAndExitedErr(err) {
+			logger.WithError(err).Error("Error reading lines")
+		}
+		reply.Error = err
+		return err
+	}
+
+	reply.Lines = lines
+	reply.NextOffsetLines = offsetLines + len(lines)
+	return nil
+}
+
+var _ Comms = &Executor{} //type-safety
+
 func init() {
-	rpc.Register(new(Executor))
+	rpc.Register(&Executor{
+		sessions: NewExecutorSessions(),
+	})
 }

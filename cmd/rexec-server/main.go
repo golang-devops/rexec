@@ -10,12 +10,8 @@ import (
 
 	"github.com/apex/log"
 
-	_ "github.com/golang-devops/rexec/comms"
+	"github.com/golang-devops/rexec/comms"
 	"github.com/golang-devops/rexec/logging"
-)
-
-var (
-	Version string = "0.0.2"
 )
 
 var (
@@ -67,7 +63,7 @@ func printMyIPs(logger *log.Entry) {
 
 func main() {
 	logger := logging.Logger()
-	logger.Info(fmt.Sprintf("Version %s", Version))
+	logger.Info(fmt.Sprintf("Version %s", comms.Version))
 
 	flag.Parse()
 	if *address == "" {

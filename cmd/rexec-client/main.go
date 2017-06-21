@@ -7,11 +7,8 @@ import (
 
 	docopt "github.com/docopt/docopt-go"
 
+	"github.com/fatih/color"
 	"github.com/golang-devops/rexec/comms"
-)
-
-var (
-	Version = "0.0.1"
 )
 
 func main() {
@@ -21,6 +18,7 @@ func main() {
 		Usage:
 		rexec-client exec --server=<server_address> <exe_path> <args>...
 		rexec-client start --server=<server_address> <exe_path> <args>...
+		rexec-client start_wait --server=<server_address> <exe_path> <args>...
 		rexec-client -h | --help
 		rexec-client -v | --version
 
@@ -30,7 +28,7 @@ func main() {
 		-v --version  				Show version.
   	`
 
-	arguments, err := docopt.Parse(usage, nil, true, "Rexec Client "+Version, false)
+	arguments, err := docopt.Parse(usage, nil, true, "Rexec Client "+comms.Version, false)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -68,7 +66,23 @@ func main() {
 		} else if startReply.Error != nil {
 			log.Fatal(startReply.Error)
 		}
-		fmt.Println(fmt.Sprintf("Started with PID: %d", startReply.Pid))
+		fmt.Println(fmt.Sprintf("Started with PID %d and SessionID %s", startReply.Pid, startReply.SessionID))
+
+		os.Exit(0)
+	} else if arguments["start_wait"].(bool) == true {
+		execExePath := arguments["<exe_path>"].(string)
+		execArgs := arguments["<args>"].([]string)
+		args := &comms.ExecutorExecuteArgs{Exe: execExePath, Args: execArgs}
+
+		err := client.RunWithFeedback(args, func(lines []string) {
+			for _, line := range lines {
+				color.HiBlue(line)
+			}
+		})
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println("Successfully ran command")
 
 		os.Exit(0)
 	}

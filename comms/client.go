@@ -3,6 +3,7 @@ package comms
 import (
 	"fmt"
 	"net/rpc"
+	"time"
 
 	"github.com/pkg/errors"
 )
@@ -34,7 +35,7 @@ func (c *Client) GetFeedback(args *GetFeedbackArgs, reply *GetFeedbackReply) err
 	return c.rpcClient.Call("Executor.GetFeedback", args, reply)
 }
 
-func (c *Client) RunWithFeedback(args *ExecutorExecuteArgs, onFeedback func(lines []string)) error {
+func (c *Client) RunWithFeedback(args *ExecutorExecuteArgs, pollForFeedbackInterval time.Duration, onFeedback func(lines []string)) error {
 	var reply ExecutorStartReply
 	if err := c.Start(args, &reply); err != nil {
 		return errors.Wrap(err, "Failed to start")
@@ -56,6 +57,9 @@ func (c *Client) RunWithFeedback(args *ExecutorExecuteArgs, onFeedback func(line
 		} else if feedbackReply.Error != nil {
 			return errors.Wrap(feedbackReply.Error, "Failed to get feedback (but got reply)")
 		}
+
+		//sleep so we don't suck the server dry
+		time.Sleep(pollForFeedbackInterval)
 
 		if len(feedbackReply.Lines) == 0 {
 			continue

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	docopt "github.com/docopt/docopt-go"
 
@@ -74,7 +75,8 @@ func main() {
 		execArgs := arguments["<args>"].([]string)
 		args := &comms.ExecutorExecuteArgs{Exe: execExePath, Args: execArgs}
 
-		err := client.RunWithFeedback(args, func(lines []string) {
+		pollForFeedbackInterval := 1500 * time.Millisecond
+		err := client.RunWithFeedback(args, pollForFeedbackInterval, func(lines []string) {
 			for _, line := range lines {
 				color.HiBlue(line)
 			}

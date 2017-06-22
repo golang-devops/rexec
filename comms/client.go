@@ -49,7 +49,7 @@ func (c *Client) RunWithFeedback(args *ExecutorExecuteArgs, onFeedback func(line
 	for {
 		var feedbackReply GetFeedbackReply
 		if err := c.GetFeedback(feedbackArgs, &feedbackReply); err != nil {
-			if IsEOFAndExitedErr(err) {
+			if IsEOFAndExitedSuccessfullyErr(err) {
 				break
 			}
 			return errors.Wrap(err, "Failed to get feedback")

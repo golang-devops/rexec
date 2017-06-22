@@ -58,6 +58,7 @@ type executorSession struct {
 	writtenCounter *writtenCounter
 	cmd            *exec.Cmd
 	isRunning      bool
+	runError       error
 	tempFilePath   string
 }
 
@@ -81,6 +82,7 @@ func (e *executorSession) SetCommand(cmd *exec.Cmd) {
 
 func (e *executorSession) StartCommand(logger *log.Entry) error {
 	e.isRunning = false
+	e.runError = nil
 
 	tempFilePrefix := fmt.Sprintf("rexec-session-%s-", e.cleanIDForFileName())
 	tempFile, err := ioutil.TempFile("", tempFilePrefix)
@@ -107,12 +109,14 @@ func (e *executorSession) wait(logger *log.Entry, tempFile *os.File) {
 	defer e.handlePanic(logger)
 
 	if err := e.cmd.Wait(); err != nil {
+		e.runError = err
 		e.isRunning = false
 		tempFile.WriteString(fmt.Sprintf("Failed to wait for command, error: %s", err.Error()))
 
 		logger.WithError(err).Error("Failed to wait for command")
 		return
 	}
+	e.runError = nil
 	e.isRunning = false
 
 	if err := tempFile.Close(); err != nil {
@@ -143,9 +147,14 @@ func (e *executorSession) ReadNextLines(offsetLines int) ([]string, error) {
 		lines = append(lines, line)
 	}
 
-	if offsetLines >= len(lines) && !e.isRunning {
-		//return error if client tries to ask for file lines but the lines were all already received and the process is finished running
-		return nil, EOF_AND_EXITED
+	if offsetLines >= len(lines) {
+		if e.runError != nil {
+			//return error if client tries to ask for file lines but the lines were all already received and the process is finished running
+			return nil, errors.Wrap(e.runError, "Program exited with an error")
+		} else if !e.isRunning {
+			//return error if client tries to ask for file lines but the lines were all already received and the process is finished running
+			return nil, EOF_AND_EXITED_SUCCESSFULLY
+		}
 	}
 
 	return lines[offsetLines:], nil

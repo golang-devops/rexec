@@ -71,7 +71,7 @@ func (e *Executor) GetFeedback(args *GetFeedbackArgs, reply *GetFeedbackReply) e
 	offsetLines := args.OffsetLines
 	lines, err := session.ReadNextLines(offsetLines)
 	if err != nil {
-		if !IsEOFAndExitedErr(err) {
+		if !IsEOFAndExitedSuccessfullyErr(err) {
 			logger.WithError(err).Error("Error reading lines")
 		}
 		reply.Error = err

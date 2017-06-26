@@ -1,30 +1,46 @@
 package main
 
 import (
-	"fmt"
+	"crypto/tls"
+	"io"
 	"log"
+	"net"
 	"os"
-	"time"
 
+	"github.com/docker/libchan"
+	"github.com/docker/libchan/spdy"
 	docopt "github.com/docopt/docopt-go"
 
-	"github.com/fatih/color"
 	"github.com/golang-devops/rexec/comms"
 )
+
+// RemoteCommand is the run parameters to be executed remotely
+type RemoteCommand struct {
+	Cmd        string
+	Args       []string
+	Stdin      io.Writer
+	Stdout     io.Reader
+	Stderr     io.Reader
+	StatusChan libchan.Sender
+}
+
+// CommandResponse is the returned response object from the remote execution
+type CommandResponse struct {
+	Status int
+}
 
 func main() {
 	usage := `
 		Rexec Client.
 
 		Usage:
-		rexec-client exec --server=<server_address> <exe_path> <args>...
-		rexec-client start --server=<server_address> <exe_path> <args>...
-		rexec-client start_wait --server=<server_address> <exe_path> <args>...
+		rexec-client [--use-tls] --server=<server_address> <exe_path> <args>...
 		rexec-client -h | --help
 		rexec-client -v | --version
 
 		Options:
-		--server=<server_address>	The address to the server
+		--use-tls                   Whether to use TLS for server communication.
+		--server=<server_address>	The address to the server.
 		-h --help     				Show this screen.
 		-v --version  				Show version.
   	`
@@ -36,56 +52,49 @@ func main() {
 
 	serverAddress := arguments["--server"].(string)
 
-	client, err := comms.NewConnectedClient(serverAddress)
+	var client net.Conn
+	var dialErr error
+	if os.Getenv("USE_TLS") != "" {
+		client, dialErr = tls.Dial("tcp", serverAddress, &tls.Config{InsecureSkipVerify: true})
+	} else {
+		client, dialErr = net.Dial("tcp", serverAddress)
+	}
+	if dialErr != nil {
+		log.Fatal(dialErr)
+	}
+
+	streamProvider, err := spdy.NewSpdyStreamProvider(client, false)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	if arguments["exec"].(bool) == true {
-		execExePath := arguments["<exe_path>"].(string)
-		execArgs := arguments["<args>"].([]string)
-		args := &comms.ExecutorExecuteArgs{Exe: execExePath, Args: execArgs}
-
-		executeReply := &comms.ExecutorExecuteReply{}
-		if err := client.Execute(args, executeReply); err != nil {
-			log.Fatal(err)
-		} else if executeReply.Error != nil {
-			log.Fatal(executeReply.Error)
-		}
-
-		fmt.Println(fmt.Sprintf("OUT: %s", string(executeReply.Out)))
-
-		os.Exit(0)
-	} else if arguments["start"].(bool) == true {
-		execExePath := arguments["<exe_path>"].(string)
-		execArgs := arguments["<args>"].([]string)
-		args := &comms.ExecutorExecuteArgs{Exe: execExePath, Args: execArgs}
-
-		startReply := &comms.ExecutorStartReply{}
-		if err := client.Start(args, startReply); err != nil {
-			log.Fatal(err)
-		} else if startReply.Error != nil {
-			log.Fatal(startReply.Error)
-		}
-		fmt.Println(fmt.Sprintf("Started with PID %d and SessionID %s", startReply.Pid, startReply.SessionID))
-
-		os.Exit(0)
-	} else if arguments["start_wait"].(bool) == true {
-		execExePath := arguments["<exe_path>"].(string)
-		execArgs := arguments["<args>"].([]string)
-		args := &comms.ExecutorExecuteArgs{Exe: execExePath, Args: execArgs}
-
-		pollForFeedbackInterval := 1500 * time.Millisecond
-		err := client.RunWithFeedback(args, pollForFeedbackInterval, func(lines []string) {
-			for _, line := range lines {
-				color.HiBlue(line)
-			}
-		})
-		if err != nil {
-			log.Fatal(err)
-		}
-		fmt.Println("Successfully ran command")
-
-		os.Exit(0)
+	transport := spdy.NewTransport(streamProvider)
+	sender, err := transport.NewSendChannel()
+	if err != nil {
+		log.Fatal(err)
 	}
+
+	receiver, remoteSender := libchan.Pipe()
+
+	command := &RemoteCommand{
+		Cmd:        arguments["<exe_path>"].(string),
+		Args:       arguments["<args>"].([]string),
+		Stdin:      os.Stdin,
+		Stdout:     os.Stdout,
+		Stderr:     os.Stderr,
+		StatusChan: remoteSender,
+	}
+
+	err = sender.Send(command)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	response := &CommandResponse{}
+	err = receiver.Receive(response)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	os.Exit(response.Status)
 }

@@ -27,30 +27,40 @@
 			"revisionTime": "2017-05-21T20:54:26Z"
 		},
 		{
+			"checksumSHA1": "dB59wllHafzjeWnBt4NN2KciABE=",
+			"path": "github.com/dmcgowan/msgpack",
+			"revision": "7b62bc929e75dbc4ae8b640dc69e1bea70a7c283",
+			"revisionTime": "2016-09-09T23:50:50Z"
+		},
+		{
+			"checksumSHA1": "LRA7HFAYLbljUNpvy53lBuS4+14=",
+			"path": "github.com/docker/libchan",
+			"revision": "0328dcec840a0659448faf08af087135fffb7fde",
+			"revisionTime": "2016-05-12T18:29:33Z"
+		},
+		{
+			"checksumSHA1": "LKBmYbzwTVJggeGRJ7Qmg685pQM=",
+			"path": "github.com/docker/libchan/spdy",
+			"revision": "0328dcec840a0659448faf08af087135fffb7fde",
+			"revisionTime": "2016-05-12T18:29:33Z"
+		},
+		{
+			"checksumSHA1": "kXAvw7antzW1OFSpEkUjEv4dNcI=",
+			"path": "github.com/docker/spdystream",
+			"revision": "ed496381df8283605c435b86d4fdd6f4f20b8c6e",
+			"revisionTime": "2016-09-12T21:06:54Z"
+		},
+		{
+			"checksumSHA1": "3jqVqTOh5Q3nyioFW/KTuwrgZ0Q=",
+			"path": "github.com/docker/spdystream/spdy",
+			"revision": "ed496381df8283605c435b86d4fdd6f4f20b8c6e",
+			"revisionTime": "2016-09-12T21:06:54Z"
+		},
+		{
 			"checksumSHA1": "filTu2d60VWPatyJK5HldvI2PdU=",
 			"path": "github.com/docopt/docopt-go",
 			"revision": "784ddc588536785e7299f7272f39101f7faccc3f",
 			"revisionTime": "2016-02-16T23:20:12Z"
-		},
-		{
-			"checksumSHA1": "4imDUe462+hEx9Tv0E1joJ7/QFs=",
-			"path": "github.com/fatih/color",
-			"revision": "62e9147c64a1ed519147b62a56a14e83e2be02c1",
-			"revisionTime": "2017-05-23T20:24:04Z"
-		},
-		{
-			"checksumSHA1": "sGC8yzCmU7CO6/Uy6TTWRgHpgLI=",
-			"origin": "github.com/fatih/color/vendor/github.com/mattn/go-colorable",
-			"path": "github.com/mattn/go-colorable",
-			"revision": "62e9147c64a1ed519147b62a56a14e83e2be02c1",
-			"revisionTime": "2017-05-23T20:24:04Z"
-		},
-		{
-			"checksumSHA1": "w8LTR7SnKYaJgDdhvC5qTjYJ5s8=",
-			"origin": "github.com/fatih/color/vendor/github.com/mattn/go-isatty",
-			"path": "github.com/mattn/go-isatty",
-			"revision": "62e9147c64a1ed519147b62a56a14e83e2be02c1",
-			"revisionTime": "2017-05-23T20:24:04Z"
 		},
 		{
 			"checksumSHA1": "uY0lKfCFIsLbt/5oeCwdzwnoZig=",
@@ -63,13 +73,6 @@
 			"path": "github.com/pkg/errors",
 			"revision": "c605e284fe17294bda444b34710735b29d1a9d90",
 			"revisionTime": "2017-05-05T04:36:39Z"
-		},
-		{
-			"checksumSHA1": "jBzWOmKY4vGfgD+DVRzzFul+VP8=",
-			"origin": "github.com/fatih/color/vendor/golang.org/x/sys/unix",
-			"path": "golang.org/x/sys/unix",
-			"revision": "62e9147c64a1ed519147b62a56a14e83e2be02c1",
-			"revisionTime": "2017-05-23T20:24:04Z"
 		}
 	],
 	"rootPath": "github.com/golang-devops/rexec"

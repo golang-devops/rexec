@@ -19,14 +19,27 @@ type RemoteCommand struct {
 	Cmd        string
 	Args       []string
 	Stdin      io.Writer
-	Stdout     io.Reader
-	Stderr     io.Reader
+	Stdout     io.Writer
+	Stderr     io.Writer
 	StatusChan libchan.Sender
 }
 
 // CommandResponse is the returned response object from the remote execution
 type CommandResponse struct {
 	Status int
+}
+
+//PrefixStringWriter prefixes the string for each call to Write
+type PrefixStringWriter struct {
+	writer io.Writer
+	prefix string
+}
+
+func (p *PrefixStringWriter) Write(b []byte) (n int, err error) {
+	if _, err := p.writer.Write([]byte(p.prefix + string(b))); err != nil {
+		return 0, err
+	}
+	return len(b), nil
 }
 
 func main() {
@@ -80,8 +93,8 @@ func main() {
 		Cmd:        arguments["<exe_path>"].(string),
 		Args:       arguments["<args>"].([]string),
 		Stdin:      os.Stdin,
-		Stdout:     os.Stdout,
-		Stderr:     os.Stderr,
+		Stdout:     &PrefixStringWriter{os.Stdout, "Out: "},
+		Stderr:     &PrefixStringWriter{os.Stderr, "Err: "},
 		StatusChan: remoteSender,
 	}
 
